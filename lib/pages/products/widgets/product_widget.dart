@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:hp_admin/models/product_model.dart';
 import 'package:hp_admin/providers/product_provider.dart';
@@ -40,7 +41,23 @@ class _ProductWidgetState extends State<ProductWidget> {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            const Text('Categories'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text('Categories'),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          productProvider!.fetchProductsData();
+                        });
+                      },
+                      icon: const Icon(CupertinoIcons.refresh_bold),
+                      label: const Text("Refresh")),
+                )
+              ],
+            ),
             _buildCategoryGrid(context),
             Text(selectedCategory?.name ?? "Products"),
             if (selectedCategory != null)
@@ -48,22 +65,20 @@ class _ProductWidgetState extends State<ProductWidget> {
           ],
         ),
       ),
-      floatingActionButton: // Visibility(
-          // visible:
-          //  selectedCategory != null && selectedCategory!.products.isNotEmpty,
-          //  child:
-          FloatingActionButton(
-        onPressed: () {
-          _showAddProductDialog(context);
-        },
-        child: const Icon(Icons.add),
+      floatingActionButton: Visibility(
+        visible: selectedCategory != null,
+        child: FloatingActionButton(
+          onPressed: () {
+            _showAddProductDialog(context);
+          },
+          child: const Icon(Icons.add),
+        ),
       ),
-      //  ),
     );
   }
 
   Widget _buildCategoryGrid(BuildContext context) {
-    int gridColumnsCategory = MediaQuery.of(context).size.width > 600 ? 4 : 2;
+    int gridColumnsCategory = MediaQuery.of(context).size.width > 600 ? 5 : 3;
     return GridView.builder(
       shrinkWrap: true,
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -138,7 +153,6 @@ class _ProductWidgetState extends State<ProductWidget> {
     TextEditingController nameController = TextEditingController();
     TextEditingController priceController = TextEditingController();
     TextEditingController imageUrlController = TextEditingController();
-    TextEditingController categoryController = TextEditingController();
 
     showDialog(
       context: context,
@@ -162,12 +176,6 @@ class _ProductWidgetState extends State<ProductWidget> {
                 controller: imageUrlController,
                 decoration: const InputDecoration(labelText: 'Image URL'),
               ),
-              TextField(
-                controller: categoryController,
-                decoration: const InputDecoration(labelText: 'Category'),
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-              ),
             ],
           ),
           actions: [
@@ -179,8 +187,7 @@ class _ProductWidgetState extends State<ProductWidget> {
             ),
             TextButton(
               onPressed: () async {
-                String categoryName = categoryController.text.trim();
-                // selectedCategory?.name ?? '';
+                String categoryName = selectedCategory?.name ?? '';
                 String productName = nameController.text.trim();
                 double productPrice =
                     double.tryParse(priceController.text) ?? 0.0;
@@ -194,7 +201,7 @@ class _ProductWidgetState extends State<ProductWidget> {
                     name: productName,
                     price: productPrice.toString(),
                     imageUrl: productImageUrl,
-                    category: categoryName,
+                    category: '',
                   );
 
                   await addProductToCategory(categoryName, newProduct);
